@@ -14,15 +14,16 @@
 
 #define BUFLEN 1400
 #define PORT 5005
-#define SRV_IP "192.168.1.2"
+#define SRV_IP "192.168.1.6"
 
 int main(int argc, char **argv)
 {
-  struct timeval tv1, tv2;
+  struct timeval tv1, tv2, tv;
   struct sockaddr_in si_other;
   int s, j, slen = sizeof(si_other);
   char buf[BUFLEN];
   uint32_t t;
+  
   
   pruIo *io = pruio_new(PRUIO_DEF_ACTIVE, 0x98, 0, 1); //! create new driver structure
   if (io->Errr) {
@@ -45,26 +46,31 @@ int main(int argc, char **argv)
       perror("inet_aton() failed");
   }
 
+
+  uint32_t t1;
   int i = 0;
-  int numreps = 1000;
+  int numreps = 10000;
   gettimeofday(&tv1, NULL);
-  for (i = 0; i < numreps; i++){
+  t1 = 1000000 * tv1.tv_sec + tv1.tv_usec;
+  for (i = 0; i < numreps; i++)
+  //while(1)
+  {
       j = 0;
       while ( j < BUFLEN ){
-          //gettimeofday(&tv, NULL);
-          //t = 1000000 * tv.tv_sec + tv.tv_usec
-          //    - 1000000 * tv1.tv_sec - tv1.tv_usec
-          buf[j + 4] = io->Adc->Value[0];
+          gettimeofday(&tv, NULL);
+	  buf[j + 4] = io->Adc->Value[0];
+          t = 1000000 * tv.tv_sec + tv.tv_usec - t1;
           memcpy(&buf[j], &t, sizeof(uint32_t));
           j = j + 5;
-      }
+	  //usleep(2);
+   }
       sendto(s, buf, BUFLEN, MSG_DONTWAIT | MSG_NOSIGNAL,
           (struct sockaddr *)&si_other, slen);
   }
   gettimeofday(&tv2, NULL);
   close(s);
 
-  uint32_t t1 = 1000000 * tv1.tv_sec + tv1.tv_usec;
+  t1 = 1000000 * tv1.tv_sec + tv1.tv_usec;
   uint32_t t2 = 1000000 * tv2.tv_sec + tv2.tv_usec;
   int numsamples = BUFLEN / 5;
   printf("rate: %f kSps\n", numsamples * numreps * 1.0E3
