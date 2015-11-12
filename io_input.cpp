@@ -12,9 +12,10 @@
 #include <sys/socket.h>
 #include <string.h>
 
-#define BUFLEN 1400
+#define BUFLEN 1406
 #define PORT 5005
-#define SRV_IP "192.168.1.6"
+#define SRV_IP "192.168.1.2"
+#define PRUIO_DEF_AVERAGE 1
 
 int main(int argc, char **argv)
 {
@@ -25,13 +26,13 @@ int main(int argc, char **argv)
   uint32_t t;
   
   
-  pruIo *io = pruio_new(PRUIO_DEF_ACTIVE, 0x98, 0, 1); //! create new driver structure
+  pruIo *io = pruio_new(PRUIO_ACT_ADC, 0, 0, 0); //! create new driver structure
   if (io->Errr) {
     printf("initialisation failed (%s)\n", io->Errr);
     return 0;
   }
 
-  if (pruio_config(io, 1, 0x1FE, 0, 4)) {
+  if (pruio_config(io, 1, 0x1FE, 500, 4)) {
     printf("config failed (%s)\n", io->Errr);
     return 0;
   }
@@ -48,21 +49,23 @@ int main(int argc, char **argv)
 
 
   uint32_t t1;
+  uint32_t val;
   int i = 0;
-  int numreps = 10000;
+  int numreps = 100;
+  usleep(1000);
   gettimeofday(&tv1, NULL);
   t1 = 1000000 * tv1.tv_sec + tv1.tv_usec;
+  t = 0;
   for (i = 0; i < numreps; i++)
-  //while(1)
   {
       j = 0;
       while ( j < BUFLEN ){
           gettimeofday(&tv, NULL);
-	  buf[j + 4] = io->Adc->Value[0];
-          t = 1000000 * tv.tv_sec + tv.tv_usec - t1;
-          memcpy(&buf[j], &t, sizeof(uint32_t));
-          j = j + 5;
-	  //usleep(2);
+	  val = io->Adc->Value[1] >> 4;
+	  memcpy(&buf[j], &val, sizeof(val));
+          t = 1000000 * tv.tv_sec + tv.tv_usec;
+          memcpy(&buf[j+2], &t, sizeof(uint32_t));
+          j = j + 6;
    }
       sendto(s, buf, BUFLEN, MSG_DONTWAIT | MSG_NOSIGNAL,
           (struct sockaddr *)&si_other, slen);
