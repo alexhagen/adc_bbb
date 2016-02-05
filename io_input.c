@@ -6,7 +6,7 @@
 #include <errno.h>
 #include <sys/types.h>
 #include <sys/time.h>
-#include "../c_wrapper/pruio.h"
+#include "/root/libpruio-0.2/src/c_wrapper/pruio.h"
 #include <sys/time.h>
 
 int main(int argc, char **argv)
