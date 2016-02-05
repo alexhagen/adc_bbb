@@ -1,4 +1,3 @@
-//! Message for the compiler.
 #define _GNU_SOURCE 1
 #include <stdint.h>
 #include <stdio.h>
@@ -8,7 +7,14 @@
 #include <sys/types.h>
 #include <sys/time.h>
 #include "/root/libpruio-0.2/src/c_wrapper/pruio.h"
-#include <sys/time.h>
+#include <arpa/inet.h>
+#include <netinet/in.h>
+#include <sys/socket.h>
+#include <string.h>
+
+#define BUFLEN 1400
+#define PORT 5005
+#define SRV_IP "192.168.1.2"
 
 int main(int argc, char **argv)
 {
@@ -24,36 +30,40 @@ int main(int argc, char **argv)
     return 0;
   }
 
-  int a;
+  if ((s=socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) ==- 1)
+      perror("socket");
+
+  memset((char *)&si_other, 0, sizeof(si_other));
+  si_other.sin_family = AF_INET;
+  si_other.sin_port = htons(PORT);
+  if (inet_aton(SRV_IP, &si_other.sin_addr) == 0) {
+      perror("inet_aton() failed");
+  }
+  int j = 0;
+  int i = 0;
   int numreps = 1000;
   gettimeofday(&tv1, NULL);
-  for (int i = 0; i < numreps; i++){
-    a = io->Adc->Value[0];
+  for (i = 0; i < numreps; i++){
+      j = 0;
+      while ( j < BUFLEN ){
+          //gettimeofday(&tv, NULL);
+          //t = 1000000 * tv.tv_sec + tv.tv_usec
+          //    - 1000000 * tv1.tv_sec - tv1.tv_usec
+          buf[j + 4] = io->Adc->Value[0];
+          memcpy(&buf[j], &t, sizeof(uint32_t));
+          j = j + 5;
+      }
+      sendto(s, buf, BUFLEN, MSG_DONTWAIT | MSG_NOSIGNAL,
+          (struct sockaddr *)&si_other, slen);
   }
   gettimeofday(&tv2, NULL);
+  close(s);
 
   uint32_t t1 = 1000000 * tv1.tv_sec + tv1.tv_usec;
   uint32_t t2 = 1000000 * tv2.tv_sec + tv2.tv_usec;
-  printf("rate: %f kSps\n", numreps * 1.0E3
+  int numsamples = BUFLEN / 5;
+  printf("rate: %f kSps\n", numsamples * numreps * 1.0E3
       / static_cast<float>(t2 - t1));
-
-  /*
-  struct termios oldt, newt; //             make terminal non-blocking
-  tcgetattr( STDIN_FILENO, &oldt );
-  newt = oldt;
-  newt.c_lflag &= ~( ICANON | ECHO );
-  newt.c_cc[VMIN] = 0;
-  newt.c_cc[VTIME] = 0;
-  tcsetattr(STDIN_FILENO, TCSANOW, &newt);
-  */
-  /*
-  printf("\r%8X %8X %8X %8X  %4d %4X %4X %4X %4X %4X %4X %4X"
-       , io->Gpio->Raw[0]->Mix, io->Gpio->Raw[1]->Mix, io->Gpio->Raw[2]->Mix, io->Gpio->Raw[3]->Mix
-       , io->Adc->Value[1], io->Adc->Value[2], io->Adc->Value[3], io->Adc->Value[4]
-       , io->Adc->Value[5], io->Adc->Value[6], io->Adc->Value[7], io->Adc->Value[8]);
-
-  //tcsetattr(STDIN_FILENO, TCSANOW, &oldt); //           reset terminal
-  */
-  pruio_destroy(io);       /* destroy driver structure */
+  pruio_destroy(io);
 	return 0;
 }
