@@ -1,6 +1,7 @@
 //! Message for the compiler.
 #define _GNU_SOURCE 1
-#include "stdio.h"
+#include <stdint.h>
+#include <stdio.h>
 #include <termios.h>
 #include <unistd.h>
 #include <errno.h>
