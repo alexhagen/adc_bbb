@@ -44,7 +44,7 @@ int main(int argc, char **argv)
   if (inet_aton(SRV_IP, &si_other.sin_addr) == 0) {
       perror("inet_aton() failed");
   }
-  int j = 0;
+
   int i = 0;
   int numreps = 1000;
   gettimeofday(&tv1, NULL);
