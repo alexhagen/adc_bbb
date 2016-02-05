@@ -11,7 +11,7 @@
 
 int main(int argc, char **argv)
 {
-  struct timeval tv1, tv2, tv;
+  struct timeval tv1, tv2;
   pruIo *io = pruio_new(PRUIO_DEF_ACTIVE, 0x98, 0, 1); //! create new driver structure
   if (io->Errr) {
     printf("initialisation failed (%s)\n", io->Errr);
@@ -33,7 +33,6 @@ int main(int argc, char **argv)
 
   uint32_t t1 = 1000000 * tv1.tv_sec + tv1.tv_usec;
   uint32_t t2 = 1000000 * tv2.tv_sec + tv2.tv_usec;
-  int numsamples = BUFLEN / 5;
   printf("rate: %f kSps\n", numreps * 1.0E3
       / static_cast<float>(t2 - t1));
 
