@@ -19,6 +19,11 @@
 int main(int argc, char **argv)
 {
   struct timeval tv1, tv2;
+  struct sockaddr_in si_other;
+  int s, j, slen = sizeof(si_other);
+  char buf[BUFLEN];
+  uint32_t t;
+  
   pruIo *io = pruio_new(PRUIO_DEF_ACTIVE, 0x98, 0, 1); //! create new driver structure
   if (io->Errr) {
     printf("initialisation failed (%s)\n", io->Errr);
